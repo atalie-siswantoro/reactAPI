@@ -1,25 +1,220 @@
-import logo from './logo.svg';
-import './App.css';
+import React, {Component} from 'react';
+import axios from 'axios';
+import {BrowserRouter as Router, Switch, Route, Link} from "react-router-dom"
+import BMI from './Studi_kasusModul3/BMI';
+import Cicilan from './Studi_kasusModul3/Cicilan';
+import Jualbeli from './Studi_kasusModul3/Jualbeli';
+import KonversiBilangan from './Studi_kasusModul3/KonversiBilangan';
+const $ = window.jQuery
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+class Pegawai extends Component {
+    constructor() {
+        super();
+        this.state = {
+          pegawai: [], // array pegawai untuk menampung data pegawai
+          nip: "",
+          nama: "",
+          alamat: "",
+          action: "",
+          search: "",
+        }
+    }
+
+    bind = (event) => {
+      this.setState({[event.target.name]: event.target.value});
+    }
+  
+    Add = () => {
+      // mengosongkan isi variabel nip, nama, dan alamat
+      // set action menjadi "insert"
+      this.setState({
+        nip: "",
+        nama: "",
+        alamat: "",
+        action: "insert"
+      });
+    }
+  
+    Edit = (item) => {
+      /*
+      - mengisikan isi variabel nip, nama, alamat sesuai dengan data yang
+      akan diedit
+      - set action menjadi "update"
+      */
+      this.setState({
+        nip: item.nip,
+        nama: item.nama,
+        alamat: item.alamat,
+        action: "update"
+      });
+    }
+  
+    getPegawai = () => {
+      let url = "http://localhost:2910/pegawai";
+      // mengakses api untuk mengambil data pegawai
+      axios.get(url)
+      .then(response => {
+        // mengisikan data dari respon API ke array pegawai
+        this.setState({pegawai: response.data.pegawai});
+      })
+      .catch(error => {
+        console.log(error);
+      });
+    }
+  
+    findPegawai = (event) => {
+      let url = "http://localhost:2910/pegawai";
+      if (event.keyCode === 13) {
+        // menampung data keyword pencarian
+        let form = {
+          find: this.state.search
+        }
+        // mengakses api untuk mengambil data pegawai
+        // berdasarkan keyword
+        axios.post(url, form)
+        .then(response => {
+          // mengisikan data dari respon API ke array pegawai
+          this.setState({pegawai: response.data.pegawai});
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      }
+    }
+  
+    SavePegawai = (event) => {
+      event.preventDefault();
+      /* menampung data nip, nama dan alamat dari Form
+      ke dalam FormData() untuk dikirim  */
+      let url = "";
+      if (this.state.action === "insert") {
+        url = "http://localhost:2910/pegawai/save"
+      } else {
+        url = "http://localhost:2910/pegawai/update"
+      }
+      
+      let form = {
+        nip: this.state.nip,
+        nama: this.state.nama,
+        alamat: this.state.alamat
+      }
+  
+      // mengirim data ke API untuk disimpan pada database
+      axios.post(url, form)
+      .then(response => {
+        // jika proses simpan berhasil, memanggil data yang terbaru
+        this.getPegawai();
+      })
+      .catch(error => {
+        console.log(error);
+      });
+      // menutup form modal
+      $("#modal").modal('hide');
+    }
+  
+    Drop = (nip) => {
+      let url = "http://localhost:2910/pegawai/" + nip;
+      // memanggil url API untuk menghapus data pada database
+      if (window.confirm('Apakah Anda yakin ingin menghapus data ini?')) {
+        axios.delete(url)
+        .then(response => {
+          // jika proses hapus data berhasil, memanggil data yang terbaru
+          this.getPegawai();
+        })
+        .catch(error => {
+          console.log(error);
+        });
+      }
+    }
+  
+    componentDidMount(){
+      // method yang pertama kali dipanggil pada saat load page
+      this.getPegawai()
+    }  
+
+    render() {
+        return (
+
+          // <Router>
+          //   <div>
+          //     <nav>
+          //       <ul>
+          //         <li>
+          //           <Link to="/BMI" className="nav-link">BMI</Link>
+          //           <Link to="/Cicilan" className="nav-link">Cicilan Bank</Link>
+          //           <Link to="/Jualbeli" className="nav-link">Jualbeli</Link>
+          //           <Link to="/Konversi" className="nav-link">Konversi Bilangan</Link>
+          //         </li>
+          //       </ul>
+          //     </nav>
+          //     <Switch>
+          //       <Route path="/BMI">
+          //         <BMI />
+          //       </Route>
+          //       <Route path="/Cicilan">
+          //         <Cicilan />
+          //       </Route>
+          //       <Route path="/Jualbeli">
+          //         <Jualbeli />
+          //       </Route>
+          //       <Route path="/Konversi">
+          //         <KonversiBilangan />
+          //       </Route>
+          //     </Switch>
+          //   </div>
+          // </Router>
+
+          <div className="m-3 card">
+            <div className="card-header bg-info text-white">Data Pegawai</div>
+            <div className="card-body">
+              <input type="text" className="form-control mb-2" name="search" value={this.state.search} onChange={this.bind} onKeyUp={this.findPegawai} placeholder="Pencarian..."/>
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>NIP</th>
+                      <th>Nama</th>
+                      <th>Alamat</th>
+                      <th>Option</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {this.state.pegawai.map((item,index) => {
+                      return (
+                        <tr key={index}>
+                          <td>{item.nip}</td>
+                          <td>{item.nama}</td>
+                          <td>{item.alamat}</td>
+                          <td>
+                            <button className="btn btn-sm btn-info m-1" data-toggle="modal" data-target="#modal" onClick={() => this.Edit(item)}>Edit</button>
+                            <button className="btn btn-sm btn-danger m-1" onClick={() => this.Drop(item.nip)}>Hapus</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                <button className="btn btn-success" onClick={this.Add} data-toggle="modal" data-target="#modal">Tambah Data</button>
+                <div className="modal fade" id="modal">
+                  <div className="modal-content">
+                    <div className="modal-header">Form Pegawai</div>
+                    <form onSubmit={this.SavePegawai}>
+                      <div className="modal-body">
+                        NIP
+                        <input type="number" name="nip" value={this.state.nip} onChange={this.bind} className="form-control" required />
+                        Nama
+                        <input type="text" name="nama" value={this.state.nama} onChange={this.bind}  className="form-control" required />
+                        Alamat
+                        <input type="text" name="alamat" value={this.state.alamat} onChange={this.bind} className="form-control" required />
+                      </div>
+                      <div className="modal-footer">  
+	                      <button className="btn btn-sm btn-success" type="submit">Simpan</button>  
+	                    </div>
+                    </form>    
+                  </div>  
+                </div>    
+            </div>  
+          </div>
+        );
+    }
 }
-
-export default App;
+export default Pegawai;
